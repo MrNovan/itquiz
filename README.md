@@ -71,19 +71,16 @@ psql -U postgres -d itquiz -f tables.sql
 Создайте файл `.env` в корне проекта:
 
 ```env
-# Admin credentials
+# Данные администратора
 VITE_ADMIN_EMAIL=your-email@example.com
 VITE_ADMIN_PASSWORD=your-secure-password
 
-# PostgreSQL connection
+# Подключение к PostgreSQL
 DB_USER=postgres
 DB_HOST=localhost
 DB_NAME=itquiz
 DB_PASSWORD=your-db-password
 DB_PORT=5432
-
-# Server port (optional)
-SERVER_PORT=5000
 ```
 
 
