@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-150;
+  transition-property: background-color, color;
+}
+
+/* Убираем анимации при переходах */
+* {
+  animation: none !important;
+  transition: none !important;
+}
