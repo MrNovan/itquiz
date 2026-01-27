@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
 import bodyParser from 'body-parser';
+import cors from 'cors';
 import { Pool } from 'pg';
 import quizRouter from './api/quiz.js';
 import path from 'path';
@@ -23,13 +24,33 @@ const pool = new Pool({
 });
 
 // Middleware
+const whitelistEnv = process.env.CORS_WHITELIST || '';
+const whitelist = whitelistEnv
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+if (whitelist.length === 0) {
+  whitelist.push('http://localhost:5173', 'http://localhost:4173');
+}
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Разрешаем запросы без origin (same-origin, например из dist на том же сервере)
+    if (!origin) return callback(null, true);
+    if (whitelist.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
 app.use(bodyParser.json());
 
-// Статические файлы из dist
-app.use(express.static(path.join(__dirname, 'dist')));
+// API роуты с CORS
+app.use('/api/quiz', cors(corsOptions), quizRouter(pool));
 
-// Роуты
-app.use('/api/quiz', quizRouter(pool));
+// Статические файлы из dist (без CORS)
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Все остальные запросы отправляем на index.html (для React Router)
 app.use((req, res) => {
