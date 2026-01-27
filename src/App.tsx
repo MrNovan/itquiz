@@ -15,7 +15,7 @@ function App() {
   const [settingsSource, setSettingsSource] = useState<AppState | null>(null);
   const [quizScore, setQuizScore] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
-  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [completedQuizQuestions, setCompletedQuizQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [settings, setSettings] = useState<QuizSettings>({
     timePerQuestion: 30,
@@ -35,7 +35,7 @@ function App() {
   const handleQuizComplete = (score: number, total: number, questions: Question[], answers: number[]) => {
     setQuizScore(score);
     setTotalQuestions(total);
-    setQuizQuestions(questions);
+    setCompletedQuizQuestions(questions);
     setUserAnswers(answers);
     setCurrentState('results');
   };
@@ -44,7 +44,7 @@ function App() {
     setCurrentState('home');
     setSelectedCategory(null);
     setSelectedLevel(null);
-    setQuizQuestions([]);
+    setCompletedQuizQuestions([]);
     setUserAnswers([]);
   };
 
@@ -118,7 +118,7 @@ function App() {
             levelId={selectedLevel!}
             score={quizScore}
             total={totalQuestions}
-            questions={quizQuestions}
+            questions={completedQuizQuestions}
             userAnswers={userAnswers}
             onRestart={handleRestartQuiz}
             onHome={handleBackToHome}

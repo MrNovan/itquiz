@@ -20,7 +20,6 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
-  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [timeLeft, setTimeLeft] = useState(settings.timePerQuestion);
   const [isTimeUp, setIsTimeUp] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -43,7 +42,6 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
         const shuffledQuestions = QuizService.shuffleArray(questionsData);
         const limitedQuestions = shuffledQuestions.slice(0, Math.min(settings.questionCount, questionsData.length));
         setQuestions(limitedQuestions);
-        setQuizQuestions(limitedQuestions);
 
         // Установка заголовков
         const category = categoriesData.find(cat => cat.id === categoryId);
@@ -79,9 +77,9 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
       const score = newAnswers.reduce((acc, answer, index) => {
         return acc + (answer === questions[index].correct_answer ? 1 : 0);
       }, 0);
-      onComplete(score, questions.length, quizQuestions, newAnswers);
+      onComplete(score, questions.length, questions, newAnswers);
     }
-  }, [currentQuestion, userAnswers, onComplete, questions, quizQuestions]);
+  }, [currentQuestion, userAnswers, onComplete, questions]);
 
   // Эффект таймера
   useEffect(() => {
@@ -94,7 +92,7 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
       setIsTimeUp(true);
       moveToNextQuestion(-1); // Переход к след. вопросу, когда кончилось время
     }
-  }, [timeLeft, isTimeUp, currentQuestion, userAnswers, onComplete, questions, quizQuestions, moveToNextQuestion]);
+  }, [timeLeft, isTimeUp, moveToNextQuestion]);
 
   // Сброс таймера при переходе к следующему вопросу
   useEffect(() => {
