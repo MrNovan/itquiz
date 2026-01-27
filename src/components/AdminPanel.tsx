@@ -8,6 +8,8 @@ import CategoryForm from './CategoryForm';
 import ConfirmModal from './ConfirmModal';
 import ThemeToggle from './ThemeToggle';
 import Header from './Header';
+import { ErrorFallback } from './ErrorFallback';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -24,6 +26,7 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [levels, setLevels] = useState<Level[]>([]);
   const [loading, setLoading] = useState(true);
+  const { error, handleError, clearError } = useErrorHandler();
   const [showForm, setShowForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -51,6 +54,7 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
   const loadData = async () => {
     try {
       setLoading(true);
+      clearError();
       const [questionsData, categoriesData, levelsData] = await Promise.all([
         QuizService.getAllQuestions(),
         QuizService.getCategories(),
@@ -61,8 +65,7 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
       setCategories(categoriesData);
       setLevels(levelsData);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
-      toast.error(errorMessage);
+      handleError(err);
     } finally {
       setLoading(false);
     }
@@ -195,10 +198,21 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 py-12 px-4">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <Header subtitle="Админ панель" />
-          <p className="text-gray-600 text-lg mt-4 text-center">Загрузка данных...</p>
+          <p className="text-gray-600 dark:text-gray-400 text-lg mt-4 text-center">Загрузка данных...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          <Header subtitle="Админ панель" />
+          <ErrorFallback error={error} onRetry={loadData} />
         </div>
       </div>
     );

@@ -6,6 +6,8 @@ import ScrollToTop from './ScrollToTop';
 import ThemeToggle from './ThemeToggle';
 import Header from './Header';
 import Footer from './Footer';
+import { ErrorFallback } from './ErrorFallback';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 
 interface QuizProps {
   categoryId: CategoryId;
@@ -24,39 +26,41 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
   const [isTimeUp, setIsTimeUp] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { error, handleError, clearError } = useErrorHandler();
   const [categoryTitle, setCategoryTitle] = useState('');
   const [levelTitle, setLevelTitle] = useState('');
   const [quizStarted, setQuizStarted] = useState(false); // Состояние начала квиза
 
+  const loadQuizData = useCallback(async () => {
+    setLoading(true);
+    clearError();
+    try {
+      const [questionsData, categoriesData, levelsData] = await Promise.all([
+        QuizService.getQuestions(categoryId, levelId),
+        QuizService.getCategories(),
+        QuizService.getLevels()
+      ]);
+
+      // Перемешивание и ограничение вопросов  (настройки)
+      const shuffledQuestions = QuizService.shuffleArray(questionsData);
+      const limitedQuestions = shuffledQuestions.slice(0, Math.min(settings.questionCount, questionsData.length));
+      setQuestions(limitedQuestions);
+
+      // Установка заголовков
+      const category = categoriesData.find(cat => cat.id === categoryId);
+      const level = levelsData.find(lvl => lvl.id === levelId);
+      setCategoryTitle(category?.title || '');
+      setLevelTitle(level?.title || '');
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryId, levelId, settings.questionCount, clearError, handleError]);
+
   useEffect(() => {
-    const loadQuizData = async () => {
-      try {
-        const [questionsData, categoriesData, levelsData] = await Promise.all([
-          QuizService.getQuestions(categoryId, levelId),
-          QuizService.getCategories(),
-          QuizService.getLevels()
-        ]);
-
-        // Перемешивание и ограничение вопросов  (настройки)
-        const shuffledQuestions = QuizService.shuffleArray(questionsData);
-        const limitedQuestions = shuffledQuestions.slice(0, Math.min(settings.questionCount, questionsData.length));
-        setQuestions(limitedQuestions);
-
-        // Установка заголовков
-        const category = categoriesData.find(cat => cat.id === categoryId);
-        const level = levelsData.find(lvl => lvl.id === levelId);
-        setCategoryTitle(category?.title || '');
-        setLevelTitle(level?.title || '');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load quiz data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadQuizData();
-  }, [categoryId, levelId, settings.questionCount]);
+  }, [loadQuizData]);
 
   const moveToNextQuestion = useCallback((answer: number) => {
     const newAnswers = [...userAnswers];
@@ -130,9 +134,7 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4">
         <div className="max-w-4xl mx-auto">
           <Header subtitle="Ошибка" />
-          <p className="text-red-600 text-lg mt-4 text-center">
-            Ошибка: {error}
-          </p>
+          <ErrorFallback error={error} onRetry={loadQuizData} />
         </div>
       </div>
     );
