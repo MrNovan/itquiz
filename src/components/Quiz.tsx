@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, ArrowRight, Clock } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Question, QuizSettings, CategoryId, LevelId } from '../types';
 import { QuizService } from '../services/quizService';
 import ScrollToTop from './ScrollToTop';
@@ -8,6 +8,7 @@ import Header from './Header';
 import Footer from './Footer';
 import { ErrorFallback } from './ErrorFallback';
 import { useErrorHandler } from '../hooks/useErrorHandler';
+import QuizTimer from './QuizTimer';
 
 interface QuizProps {
   categoryId: CategoryId;
@@ -22,7 +23,6 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
-  const [timeLeft, setTimeLeft] = useState(settings.timePerQuestion);
   const [isTimeUp, setIsTimeUp] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,24 +85,18 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
     }
   }, [currentQuestion, userAnswers, onComplete, questions]);
 
-  // Эффект таймера
-  useEffect(() => {
-    if (timeLeft > 0 && !isTimeUp) {
-      const timer = setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !isTimeUp) {
+  // Обработчик истечения времени (мемоизирован для стабильной ссылки)
+  const handleTimeUp = useCallback(() => {
+    if (!isTimeUp) {
       setIsTimeUp(true);
-      moveToNextQuestion(-1); // Переход к след. вопросу, когда кончилось время
+      moveToNextQuestion(-1);
     }
-  }, [timeLeft, isTimeUp, moveToNextQuestion]);
+  }, [isTimeUp, moveToNextQuestion]);
 
-  // Сброс таймера при переходе к следующему вопросу
+  // Сброс isTimeUp при переходе к следующему вопросу
   useEffect(() => {
-    setTimeLeft(settings.timePerQuestion);
     setIsTimeUp(false);
-  }, [currentQuestion, settings.timePerQuestion]);
+  }, [currentQuestion]);
 
   const handleAnswerSelect = (answerIndex: number) => {
     setSelectedAnswer(answerIndex);
@@ -110,13 +104,6 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
 
   const handleNext = () => {
     moveToNextQuestion(selectedAnswer ?? -1);
-  };
-
-
-  const getTimeColor = () => {
-    if (timeLeft <= 5) return 'text-red-500';
-    if (timeLeft <= 10) return 'text-yellow-500';
-    return 'text-green-500';
   };
 
   if (loading) {
@@ -170,12 +157,11 @@ const Quiz = ({ categoryId, levelId, settings, onBack, onComplete, onHomeClick }
             <p className="text-blue-500 text-center">
               Вопрос {currentQuestion + 1} из {questions.length}
             </p>
-            <div className="flex items-center justify-center mt-4">
-              <Clock className={`w-5 h-5 mr-2 ${getTimeColor()}`} />
-              <span className={`text-lg font-semibold ${getTimeColor()}`}>
-                {timeLeft} сек
-              </span>
-            </div>
+            <QuizTimer
+              initialTime={settings.timePerQuestion}
+              questionIndex={currentQuestion}
+              onTimeUp={handleTimeUp}
+            />
           </div>
 
           <div className="mb-8">
