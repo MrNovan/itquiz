@@ -1,11 +1,36 @@
 import { Category, Level, Question } from '../types';
+import { FetchOptions } from '../types/errors';
 import { FetchWithRetry } from '../utils/fetchWithRetry';
 
 const API_BASE_URL = '/api/quiz';
 
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+
+interface ApiRequestOptions<TBody = unknown> {
+  method?: HttpMethod;
+  body?: TBody;
+  retryConfig?: FetchOptions['retryConfig'];
+}
+
 export class QuizService {
-  // Приватный метод для обработки ответов
-  private static async handleResponse<T>(response: Response): Promise<T> {
+  // Универсальный wrapper для всех API запросов
+  private static async apiRequest<TResponse, TBody = unknown>(
+    endpoint: string,
+    options: ApiRequestOptions<TBody> = {}
+  ): Promise<TResponse> {
+    const { method = 'GET', body, retryConfig } = options;
+    
+    const fetchOptions: FetchOptions = {
+      method,
+      ...(body && {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+      ...(retryConfig && { retryConfig }),
+    };
+
+    const response = await FetchWithRetry.fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+    
     if (!response.ok) {
       let errorMsg = `HTTP error! status: ${response.status}`;
       try {
@@ -16,91 +41,78 @@ export class QuizService {
       }
       throw new Error(errorMsg);
     }
+    
+    // Для DELETE/PUT/POST без тела ответа
+    const contentType = response.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      return undefined as TResponse;
+    }
+    
     return response.json();
   }
 
   static async getCategories(): Promise<Category[]> {
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/categories`);
-    return this.handleResponse<Category[]>(response);
+    return this.apiRequest<Category[]>('/categories');
   }
 
   static async getLevels(): Promise<Level[]> {
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/levels`);
-    return this.handleResponse<Level[]>(response);
+    return this.apiRequest<Level[]>('/levels');
   }
 
   static async getQuestions(categoryId: string, levelId: string): Promise<Question[]> {
-    const response = await FetchWithRetry.fetch(
-      `${API_BASE_URL}/questions?categoryId=${categoryId}&levelId=${levelId}`
-    );
-    return this.handleResponse<Question[]>(response);
+    return this.apiRequest<Question[]>(`/questions?categoryId=${categoryId}&levelId=${levelId}`);
   }
 
   // методы Админа
   static async getAllQuestions(): Promise<Question[]> {
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/all-questions`);
-    return this.handleResponse<Question[]>(response);
+    return this.apiRequest<Question[]>('/all-questions');
   }
 
   static async createQuestion(questionData: Omit<Question, 'id' | 'created_at'>): Promise<void> {
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/questions`, {
+    return this.apiRequest('/questions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(questionData),
-      retryConfig: { maxRetries: 1 }
+      body: questionData,
+      retryConfig: { maxRetries: 1 },
     });
-    await this.handleResponse<void>(response);
   }
 
   static async updateQuestion(id: string, questionData: Omit<Question, 'id' | 'created_at'>): Promise<void> {
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/questions/${id}`, {
+    return this.apiRequest(`/questions/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(questionData),
-      retryConfig: { maxRetries: 1 }
+      body: questionData,
+      retryConfig: { maxRetries: 1 },
     });
-    await this.handleResponse<void>(response);
   }
 
   static async deleteQuestion(id: string): Promise<void> {
-    console.log('Attempting to delete question with id:', id);
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/questions/${id}`, {
+    return this.apiRequest(`/questions/${id}`, {
       method: 'DELETE',
-      retryConfig: { maxRetries: 1 }
+      retryConfig: { maxRetries: 1 },
     });
-    await this.handleResponse<void>(response);
-    console.log('Question deleted successfully');
   }
 
   // Управление категориями
   static async createCategory(categoryData: Omit<Category, 'created_at'>): Promise<void> {
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/categories`, {
+    return this.apiRequest('/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(categoryData),
-      retryConfig: { maxRetries: 1 }
+      body: categoryData,
+      retryConfig: { maxRetries: 1 },
     });
-    await this.handleResponse<void>(response);
   }
 
   static async updateCategory(id: string, categoryData: Omit<Category, 'created_at'>): Promise<void> {
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/categories/${id}`, {
+    return this.apiRequest(`/categories/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(categoryData),
-      retryConfig: { maxRetries: 1 }
+      body: categoryData,
+      retryConfig: { maxRetries: 1 },
     });
-    await this.handleResponse<void>(response);
   }
 
   static async deleteCategory(id: string): Promise<void> {
-    console.log('Attempting to delete category with id:', id);
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}/categories/${id}`, {
+    return this.apiRequest(`/categories/${id}`, {
       method: 'DELETE',
-      retryConfig: { maxRetries: 1 }
+      retryConfig: { maxRetries: 1 },
     });
-    await this.handleResponse<void>(response);
-    console.log('Category deleted successfully');
   }
   static shuffleArray<T>(array: T[]): T[] {
     const shuffled = [...array];
