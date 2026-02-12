@@ -5,6 +5,7 @@ import Quiz from './components/Quiz';
 import Results from './components/Results';
 import Settings from './components/Settings';
 import { QuizSettings, CategoryId, LevelId, Question } from './types';
+import { DEFAULT_TIME_PER_QUESTION, DEFAULT_QUESTION_COUNT } from './constants/quiz';
 
 type AppState = 'home' | 'level-select' | 'quiz' | 'results' | 'settings';
 
@@ -18,8 +19,8 @@ function App() {
   const [completedQuizQuestions, setCompletedQuizQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [settings, setSettings] = useState<QuizSettings>({
-    timePerQuestion: 30,
-    questionCount: 5
+    timePerQuestion: DEFAULT_TIME_PER_QUESTION,
+    questionCount: DEFAULT_QUESTION_COUNT
   });
 
   const handleCategorySelect = (category: CategoryId) => {

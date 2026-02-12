@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Clock, Hash, Save } from 'lucide-react';
 import { QuizSettings } from '../types';
+import { TIME_OPTIONS, QUESTION_COUNT_OPTIONS } from '../constants/quiz';
 import ScrollToTop from './ScrollToTop';
 import ThemeToggle from './ThemeToggle';
 import Header from './Header';
@@ -21,8 +22,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSave, onBack, onHomeCli
     onSave({ timePerQuestion, questionCount });
   };
 
-  const timeOptions = [5, 10, 15, 20, 25, 30];
-  const questionOptions = [5, 10, 15, 20, 25, 30];
+  const timeOptions = [...TIME_OPTIONS];
+  const questionOptions = [...QUESTION_COUNT_OPTIONS];
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4 transition-colors duration-300">
