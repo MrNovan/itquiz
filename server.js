@@ -32,6 +32,8 @@ const whitelist = whitelistEnv
 if (whitelist.length === 0) {
   whitelist.push('http://localhost:5173', 'http://localhost:4173');
 }
+// Добавляем порт сервера для same-origin запросов из dist
+whitelist.push(`http://localhost:${port}`);
 const corsOptions = {
   origin: (origin, callback) => {
     // Разрешаем запросы без origin (same-origin, например из dist на том же сервере)
