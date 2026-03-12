@@ -16,31 +16,7 @@ export class FetchWithRetry {
   };
   
   /**
-   * Выполняет HTTP запрос с автоматическими повторными попытками при временных ошибках.
-   * 
-   * @param url - URL для запроса
-   * @param options - Опции fetch с дополнительной конфигурацией retry
-   * @returns Promise с Response объектом
-   * @throws Error с дополнительными полями type, statusCode, isRetryable
-   * 
-   * @example
-   * // Простой GET запрос с дефолтной retry конфигурацией
-   * const response = await FetchWithRetry.fetch('/api/data');
-   * 
-   * @example
-   * // POST запрос с кастомной retry конфигурацией
-   * const response = await FetchWithRetry.fetch('/api/data', {
-   *   method: 'POST',
-   *   body: JSON.stringify(data),
-   *   retryConfig: { maxRetries: 1 }
-   * });
-   * 
-   * @example
-   * // Отключение retry для конкретного запроса
-   * const response = await FetchWithRetry.fetch('/api/data', {
-   *   retryConfig: { noRetry: true }
-   * });
-   */
+   * Выполняет HTTP запрос с автоматическими повторными попытками при временных ошибках.*/
   static async fetch(
     url: string,
     options: FetchOptions = {}
@@ -80,6 +56,11 @@ export class FetchWithRetry {
           new Error(`HTTP ${response.status}`),
           response
         );
+        
+        // Для 4xx с флагом noRetryOn4xx - возвращаем response для обработки в apiRequest
+        if (options.noRetryOn4xx && response.status >= 400 && response.status < 500) {
+          return response;
+        }
         
         // Если ошибка не retryable - выбрасываем сразу
         if (!classifiedError.isRetryable) {

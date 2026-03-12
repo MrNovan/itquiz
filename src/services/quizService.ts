@@ -13,6 +13,11 @@ interface ApiRequestOptions<TBody = unknown> {
 }
 
 export class QuizService {
+  // Маппинг серверных ошибок на русские сообщения
+  private static readonly ERROR_MESSAGES: Record<string, string> = {
+    'Cannot delete category used in questions': 'Невозможно удалить категорию, в которой есть вопросы. Сначала удалите все вопросы из этой категории.',
+  };
+
   // Универсальный wrapper для всех API запросов
   private static async apiRequest<TResponse, TBody = unknown>(
     endpoint: string,
@@ -26,16 +31,24 @@ export class QuizService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       }),
-      ...(retryConfig && { retryConfig }),
+      ...(retryConfig && { retryConfig, noRetryOn4xx: true }),
     };
 
-    const response = await FetchWithRetry.fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+    let response: Response;
+    try {
+      response = await FetchWithRetry.fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+    } catch (err) {
+      // FetchWithRetry выбросил ошибку - пробрасываем дальше
+      throw err;
+    }
     
     if (!response.ok) {
       let errorMsg = `HTTP error! status: ${response.status}`;
       try {
         const errorData = await response.json();
-        errorMsg = errorData.error || errorMsg;
+        const serverError = errorData.error || errorMsg;
+        // Переводим известные ошибки на русский
+        errorMsg = this.ERROR_MESSAGES[serverError] || serverError;
       } catch {
         // Игнорируем ошибки парсинга JSON
       }

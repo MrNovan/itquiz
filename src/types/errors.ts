@@ -24,4 +24,5 @@ export interface RetryConfig {
 
 export interface FetchOptions extends RequestInit {
   retryConfig?: Partial<RetryConfig>;
+  noRetryOn4xx?: boolean;  // Не retry и не throw на 4xx - вернуть response для обработки
 }
