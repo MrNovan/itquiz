@@ -88,9 +88,7 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
       message: 'Вы уверены, что хотите удалить этот вопрос? Это действие нельзя отменить.',
       onConfirm: async () => {
         try {
-          console.log('Deleting question:', questionId);
           await deleteQuestion(questionId);
-          console.log('Question deleted successfully');
         } catch (err) {
           console.error('Error deleting question:', err);
           const errorMessage = err instanceof Error ? err.message : 'Failed to delete question';
@@ -142,9 +140,7 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
       message: 'Вы уверены, что хотите удалить эту категорию? Это возможно только если в ней нет вопросов. Это действие нельзя отменить.',
       onConfirm: async () => {
         try {
-          console.log('Deleting category:', categoryId);
           await deleteCategory(categoryId);
-          console.log('Category deleted successfully');
         } catch (err) {
           console.error('Error deleting category:', err);
           const errorMessage = err instanceof Error ? err.message : 'Failed to delete category';
