@@ -91,12 +91,12 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
           console.log('Deleting question:', questionId);
           await deleteQuestion(questionId);
           console.log('Question deleted successfully');
-          setConfirmModal({ ...confirmModal, isOpen: false });
         } catch (err) {
           console.error('Error deleting question:', err);
           const errorMessage = err instanceof Error ? err.message : 'Failed to delete question';
           toast.error(errorMessage);
-          setConfirmModal({ ...confirmModal, isOpen: false });
+        } finally {
+          closeConfirmModal();
         }
       },
       type: 'danger'
@@ -145,12 +145,12 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
           console.log('Deleting category:', categoryId);
           await deleteCategory(categoryId);
           console.log('Category deleted successfully');
-          setConfirmModal({ ...confirmModal, isOpen: false });
         } catch (err) {
           console.error('Error deleting category:', err);
           const errorMessage = err instanceof Error ? err.message : 'Failed to delete category';
           toast.error(errorMessage);
-          setConfirmModal({ ...confirmModal, isOpen: false });
+        } finally {
+          closeConfirmModal();
         }
       },
       type: 'danger'
@@ -276,7 +276,15 @@ const AdminPanel = ({ onLogout }: AdminPanelProps) => {
         )}
       </div>
 
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={5000} 
+        closeOnClick 
+        newestOnTop 
+        pauseOnHover
+        draggable
+        style={{ zIndex: 99999 }}
+      />
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
